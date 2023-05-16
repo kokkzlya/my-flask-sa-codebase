@@ -1,5 +1,5 @@
 import gevent
-import psycogreen
+import psycogreen.gevent
 
 bind = "0.0.0.0:5000"
 forwarded_allow_ips = "*"
