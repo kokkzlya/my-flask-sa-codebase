@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+env $(cat .env | xargs) docker compose \
+    -f misc/docker/docker-compose.yml \
+    up --detach --remove-orphans \
+        postgres
+
+poetry install
+poetry run alembic upgrade head

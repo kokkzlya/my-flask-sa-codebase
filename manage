@@ -1,0 +1,5 @@
+#!/bin/sh -e
+
+export PYTHONPATH=$(pwd)/src
+set -a
+exec poetry run python -m myproject.cli $@
