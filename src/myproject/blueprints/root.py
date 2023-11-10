@@ -52,7 +52,7 @@ def health_check():
             error=err,
         ))
         if not ok:
-            errs.append(err)
+            errs.append(HealthcheckError(error=err))
 
     status.status = "healthy" if len(errs) == 0 else "unhealthy"
     status.errors = errs if len(errs) > 0 else None
