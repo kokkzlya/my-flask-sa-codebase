@@ -13,6 +13,18 @@ class CLI(object):
             "myproject.wsgi:app",
         ])
 
+    def run_healthcheck(self):
+        """
+        Run healthcheck
+        """
+        import requests
+
+        resp = requests.get(
+            "http://myproject.127.0.0.1.nip.io:5000/healthcheck",
+        )
+        print(resp.text)
+        raise SystemExit(0 if resp.status_code < 300 else 1)
+
 
 def _execvp(args):
     import os

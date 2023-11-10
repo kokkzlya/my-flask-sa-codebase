@@ -1,12 +1,12 @@
 from dataclasses import field
-from typing import Optional
+from typing import Callable, Optional, Tuple
 
-from dependency_injector.wiring import Provide, inject
-from flask import Blueprint, Flask, jsonify
+from flask import Blueprint, Flask, Response
 from marshmallow_dataclass import dataclass
-from redis import Redis
 
-from myproject.containers import App
+from myproject.healthchecks import (
+    postgres_healthcheck, redis_healthcheck,
+)
 
 bp = Blueprint("root", __name__)
 
@@ -17,29 +17,50 @@ def landing():
 
 
 @dataclass
+class HealthcheckError:
+    error: str
+
+
+@dataclass
+class HealthcheckStatus:
+    status: str = field(default=None)
+    errors: Optional[list[HealthcheckError]] = field(default=None)
+    services: list["ServiceStatus"] = field(default_factory=list)
+
+
+@dataclass
 class ServiceStatus:
+    name: str = field(default=None)
     status: str = field(default=None)
     error: Optional[str] = field(default=None)
 
 
 @bp.route("/healthcheck", methods=["GET"])
-@inject
-def health_check(
-        r: Redis = Provide[App.core.redis_client],
-        ):
-    redis_status = ServiceStatus()
-    try:
-        r.ping()
-        redis_status.status = "Successful"
-    except Exception:
-        redis_status.status = "Unavailable"
-        redis_status.error = "Cannot connect to Redis"
+def health_check():
+    healthcheckers: Tuple[str, Callable] = [
+        ("redis", redis_healthcheck, ),
+        ("postgresql", postgres_healthcheck, ),
+    ]
+    status = HealthcheckStatus()
+    errs = []
+    for healthchecker in healthcheckers:
+        service_name, func = healthchecker
+        ok, err = func()
+        status.services.append(ServiceStatus(
+            name=service_name,
+            status="healthy" if ok else "unhealthy",
+            error=err,
+        ))
+        if not ok:
+            errs.append(err)
 
-    postgres_status = ServiceStatus()
-
-    return jsonify({
-        'redis_status': ServiceStatus.Schema().dump(redis_status),
-    })
+    status.status = "healthy" if len(errs) == 0 else "unhealthy"
+    status.errors = errs if len(errs) > 0 else None
+    return Response(
+        status=200 if status.status == "healthy" else 500,
+        content_type="application/json",
+        response=HealthcheckStatus.Schema().dumps(status),
+    )
 
 
 def register_blueprints(app: Flask):
