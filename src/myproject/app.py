@@ -21,19 +21,16 @@ def create_app(config):
     app = Flask(__name__)
     app.config.from_object(config)
 
+    db.init_app(app)
+    login_manager.init_app(app)
+    root.register_blueprints(app)
+    api.register_blueprints(app)
+
     container = containers.App()
     container.config.from_dict(app.config)
     container.init_resources()
     container.wire(modules=[
-        "myproject.blueprints.root",
+        "myproject.healthchecks",
     ])
     app.container = container
-
-    db.init_app(app)
-
-    root.register_blueprints(app)
-    api.register_blueprints(app)
-
-    login_manager.init_app(app)
-
     return app
