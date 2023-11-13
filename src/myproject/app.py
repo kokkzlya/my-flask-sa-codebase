@@ -5,7 +5,7 @@ from sqlalchemy import select
 from myproject.blueprints import api, root
 from myproject.repository import db
 from myproject.repository.model import User
-from myproject import containers
+from myproject import containers, reverse_proxy_url_scheme
 
 login_manager = LoginManager()
 
@@ -21,19 +21,17 @@ def create_app(config):
     app = Flask(__name__)
     app.config.from_object(config)
 
+    reverse_proxy_url_scheme.init_app(app)
+    db.init_app(app)
+    login_manager.init_app(app)
+    root.register_blueprints(app)
+    api.register_blueprints(app)
+
     container = containers.App()
     container.config.from_dict(app.config)
     container.init_resources()
     container.wire(modules=[
-        "myproject.blueprints.root",
+        "myproject.healthchecks",
     ])
     app.container = container
-
-    db.init_app(app)
-
-    root.register_blueprints(app)
-    api.register_blueprints(app)
-
-    login_manager.init_app(app)
-
     return app

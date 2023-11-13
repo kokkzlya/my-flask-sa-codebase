@@ -19,6 +19,7 @@ psycogreen = "^1.0.2"
 Flask-Login = "^0.6.3"
 redis = "^5.0.1"
 dependency-injector = "^4.41.0"
+requests = "^2.31.0"
 
 [tool.poetry.dev-dependencies]
 
