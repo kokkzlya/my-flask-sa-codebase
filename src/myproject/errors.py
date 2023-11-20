@@ -10,7 +10,7 @@ class ErrorReason(object):
 
 class BaseError(Exception):
     status: int = 500
-    type: str = "ipac_error"
+    type: str = "myproject_error"
     errors: list[ErrorReason] = []
     headers: dict[str, str] = {}
 

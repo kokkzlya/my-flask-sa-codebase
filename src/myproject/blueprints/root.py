@@ -1,8 +1,8 @@
-from dataclasses import field
+from dataclasses import dataclass, field
 from typing import Callable, Optional, Tuple
 
+from dataclasses_json import dataclass_json
 from flask import Blueprint, Flask, Response
-from marshmallow_dataclass import dataclass
 
 from myproject.healthchecks import (
     postgres_healthcheck, redis_healthcheck,
@@ -16,11 +16,13 @@ def landing():
     return "<h1>Hello, World!</h1>"
 
 
+@dataclass_json
 @dataclass
 class HealthcheckError:
     error: str
 
 
+@dataclass_json
 @dataclass
 class HealthcheckStatus:
     status: str = field(default=None)
@@ -28,6 +30,7 @@ class HealthcheckStatus:
     services: list["ServiceStatus"] = field(default_factory=list)
 
 
+@dataclass_json
 @dataclass
 class ServiceStatus:
     name: str = field(default=None)

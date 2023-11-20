@@ -1,7 +1,6 @@
 from datetime import datetime
 from uuid import uuid4
 
-from flask_login import UserMixin
 from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -13,7 +12,7 @@ class TimestampMixin(object):
     updated: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
 
-class User(Base, UserMixin, TimestampMixin):
+class User(Base, TimestampMixin):
     __tablename__ = "user"
 
     id: Mapped[str] = mapped_column(

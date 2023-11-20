@@ -1,111 +1,83 @@
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Optional
-
-from flask import Blueprint, jsonify, request
+from dependency_injector.wiring import Provide, inject
+from flask import Blueprint, Response, request
 from flask_login import current_user, login_required
-from marshmallow_dataclass import class_schema
-from sqlalchemy import select
 
-from myproject.core.errors import NotFoundError
-from myproject.repository.db import Session
-from myproject.repository.model import Post, User
+from myproject.containers import App
+from myproject.domain.datatypes import Post
+from myproject.domain.interfaces.usecases import (
+    CreatePost, DeletePost, GetPost, UpdatePost,
+)
+from myproject.errors import NotFoundError
 
 bp = Blueprint("posts", __name__)
 
 
-@dataclass
-class RequestNewPost():
-    title: str
-    content: str
-
-
-RequestNewPostSchema = class_schema(RequestNewPost)
-
-
-@dataclass
-class RequestEditPost(RequestNewPost):
-    published_at: Optional[datetime]
-
-
-RequestEditPostSchema = class_schema(RequestEditPost)
-
-
-@dataclass
-class ResponsePostAuthor:
-    id: str
-
-
-@dataclass
-class ResponsePost(RequestEditPost):
-    id: str
-    author: ResponsePostAuthor
-    created: datetime
-    updated: datetime
-    deleted: Optional[datetime]
-
-
-ResponsePostSchema = class_schema(ResponsePost)
-
-
-@bp.route("", methods=["GET"])
-def fetch_posts():
-    stmt = select(Post) \
-        .where(Post.deleted.is_(None)) \
-        .join(User, User.id == Post.author_id, isouter=True) \
-        .order_by(Post.created)
-    result = Session.scalars(stmt).all()
-    return jsonify([
-        ResponsePostSchema().dump(row)
-        for row in result
-    ])
+# @bp.route("", methods=["GET"])
+# def fetch_posts():
+#     stmt = select(Post) \
+#         .where(Post.deleted.is_(None)) \
+#         .join(User, User.id == Post.author_id, isouter=True) \
+#         .order_by(Post.created)
+#     result = Session.scalars(stmt).all()
+#     return jsonify([
+#         ResponsePostSchema().dump(row)
+#         for row in result
+#     ])
 
 
 @bp.route("", methods=["POST"])
 @login_required
-def create_post():
-    p = RequestNewPostSchema().load(request.get_json())
-    new_post = Post(
-        title=p.title,
-        content=p.content,
-        author_id=current_user.id,
-        created=datetime.utcnow(),
-        updated=datetime.utcnow(),
+@inject
+def create_post(create_post: CreatePost = Provide[App.usecases.create_post]):
+    p: Post = Post.from_json(request.get_data(as_text=True))
+    p.author = current_user.user
+    create_post.execute(p)
+    return Response(
+        response=p.to_json(),
+        status=201,
+        headers={'Content-Type': "application/json"},
     )
-    Session.add(new_post)
-    Session.flush()
-    return jsonify(ResponsePostSchema().dump(new_post)), 201
 
 
 @bp.route("/<post_id>", methods=["GET"])
-def fetch_post(post_id):
-    stmt = select(Post).where(Post.id == post_id)
-    result = Session.scalars(stmt).first()
+@inject
+def fetch_post(
+        post_id,
+        get_post: GetPost = Provide[App.usecases.get_post],
+        ):
+    result = get_post.execute(post_id)
     if result is None:
         raise NotFoundError(f"post with id `{post_id}` is not found")
-    print(result.id, result.title)
-    return jsonify(ResponsePostSchema().dump(result))
+    return Response(
+        response=result.to_json(),
+        headers={'Content-Type': "application/json"},
+    )
 
 
 @bp.route("/<post_id>", methods=["PUT"])
-def update_post(post_id):
-    stmt = select(Post).where(Post.id == post_id)
-    result = Session.scalars(stmt).first()
+@inject
+def update_post(
+        post_id: str,
+        get_post: GetPost = Provide[App.usecases.get_post],
+        update_post: UpdatePost = Provide[App.usecases.update_post],
+        ):
+    result = get_post.execute(post_id)
     if result is None:
         raise NotFoundError(f"post with id `{post_id}` is not found")
-
-    p = RequestEditPostSchema().load(request.get_json())
-    result.title = p.title
-    result.content = p.content
-    result.published_at = p.published_at
+    post: Post = Post.from_json(request.get_data(as_text=True))
+    update_post.execute(post)
     return "", 204
 
 
 @bp.route("/<post_id>", methods=["DELETE"])
-def delete_post(post_id):
-    stmt = select(Post).where(Post.id == post_id)
-    result = Session.scalars(stmt).first()
+@inject
+def delete_post(
+        post_id: str,
+        get_post: GetPost = Provide[App.usecases.get_post],
+        delete_post: DeletePost = Provide[App.usecases.delete_post],
+        ):
+    result = get_post.execute(post_id)
     if result is None:
         raise NotFoundError(f"post with id `{post_id}` is not found")
-    result.deleted = datetime.utcnow()
+    delete_post.execute(post_id)
     return "", 204

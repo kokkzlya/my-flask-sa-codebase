@@ -2,19 +2,21 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-from flask import Blueprint, jsonify, request
-from marshmallow_dataclass import class_schema
+from dataclasses_json import dataclass_json
+from flask import Blueprint, Response, jsonify, request
 from passlib.hash import argon2
 from sqlalchemy import or_, select
 from sqlalchemy.orm import load_only
 
-from myproject.core.errors import NotFoundError
+from myproject.domain.datatypes import User
+from myproject.errors import NotFoundError
 from myproject.repository.db import Session
-from myproject.repository.model import User
+from myproject.repository.model import User as UserModel
 
 bp = Blueprint("users", __name__)
 
 
+@dataclass_json
 @dataclass
 class RequestNewUser:
     name: str
@@ -23,9 +25,7 @@ class RequestNewUser:
     password: str
 
 
-RequestNewUserSchema = class_schema(RequestNewUser)
-
-
+@dataclass_json
 @dataclass
 class ResponseUser:
     id: str
@@ -37,28 +37,26 @@ class ResponseUser:
     deleted: Optional[datetime]
 
 
-ResponseUserSchema = class_schema(ResponseUser)
-
-
 @bp.route("", methods=["GET"])
 def fetch_users():
-    stmt = select(User) \
+    stmt = select(UserModel) \
         .options(load_only(
-            User.id, User.name, User.email, User.username, User.password,
-            User.banned_until, User.created, User.updated,
+            UserModel.id, UserModel.name, UserModel.email, UserModel.username,
+            UserModel.password, UserModel.banned_until, UserModel.created,
+            UserModel.updated,
         )) \
-        .where(User.deleted.is_(None)) \
-        .order_by(User.deleted.is_(None))
+        .where(UserModel.deleted.is_(None)) \
+        .order_by(UserModel.deleted.is_(None))
     result = Session.scalars(stmt)
     return jsonify([
-        ResponseUserSchema().dump(row)
+        User.from_dict(row)
         for row in result
     ])
 
 
 @bp.route("", methods=["POST"])
 def create_user():
-    u = RequestNewUserSchema().load(request.get_json())
+    u = User.from_json(request.get_data(as_text=True))
     new_user = User(
         name=u.name,
         email=u.email,
@@ -69,7 +67,11 @@ def create_user():
     )
     Session.add(new_user)
     Session.flush()
-    return jsonify(ResponseUserSchema().dump(new_user)), 201
+    return Response(
+        response=User.from_dict(new_user).to_json(),
+        status=201,
+        headers={'Content-Type': "application/json"},
+    )
 
 
 @bp.route("/<user_id>", methods=["GET"])
@@ -88,4 +90,10 @@ def fetch_user(user_id):
     result = Session.scalars(stmt).first()
     if result is None:
         raise NotFoundError(f"user with ID: `{user_id}` is not found")
-    return jsonify(ResponseUserSchema().dump(result))
+    return Response(
+        response=User.from_dict({
+            col.name: getattr(result, col.name)
+            for col in UserModel.__table__.columns
+        }),
+        headers={'Content-Type': "application/json"},
+    )

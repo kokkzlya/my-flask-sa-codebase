@@ -1,6 +1,6 @@
 import logging
 
-from flask import Flask, g
+from flask import Flask
 from greenlet import getcurrent
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
@@ -24,26 +24,26 @@ def init_app(app: Flask):
     engine = create_engine(app.config["SQL_URL"])
     Session.configure(bind=engine)
 
-    app.before_request(_before_request)
-    app.after_request(_after_request)
+    # app.before_request(_before_request)
+    # app.after_request(_after_request)
 
     # https://github.com/pallets-eco/flask-sqlalchemy/blob/main/src/flask_sqlalchemy/extension.py#L406
     app.teardown_appcontext(_teardown_session)
 
 
-def _before_request():
-    g.force_commit = False
+# def _before_request():
+#     g.force_commit = False
 
 
-def _after_request(resp):
-    try:
-        if getattr(g, "force_commit", False) or resp.status_code < 400:
-            Session.commit()
-        else:
-            Session.rollback()
-    finally:
-        Session.close()
-        return resp
+# def _after_request(resp):
+#     try:
+#         if getattr(g, "force_commit", False) or resp.status_code < 400:
+#             Session.commit()
+#         else:
+#             Session.rollback()
+#     finally:
+#         Session.close()
+#         return resp
 
 
 def _teardown_session(resp_or_exc):
