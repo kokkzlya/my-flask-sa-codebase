@@ -3,18 +3,22 @@ from flask_login import LoginManager
 from sqlalchemy import select
 
 from myproject.blueprints import api, root
+from myproject.domain.datatypes import AuthedUser, User
 from myproject.repository import db
-from myproject.repository.model import User
+from myproject.repository.model import User as UserModel
 from myproject import containers, reverse_proxy_url_scheme
 
 login_manager = LoginManager()
 
 
 @login_manager.user_loader
-def load_user(user_id):
-    stmt = select(User).where(User.id == user_id)
+def load_user(user_id) -> User:
+    stmt = select(UserModel).where(UserModel.id == user_id)
     result = db.Session.scalars(stmt).first()
-    return result
+    return AuthedUser(User.from_dict({
+        col.name: getattr(result, col.name)
+        for col in UserModel.__table__.columns
+    }))
 
 
 def create_app(config):
@@ -32,6 +36,8 @@ def create_app(config):
     container.init_resources()
     container.wire(modules=[
         "myproject.healthchecks",
+        "myproject.blueprints.api.auth",
+        "myproject.blueprints.api.posts",
     ])
     app.container = container
     return app

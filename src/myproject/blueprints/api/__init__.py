@@ -1,6 +1,6 @@
 from flask import Blueprint, Flask, jsonify
 
-from myproject.core.errors import BaseError
+from myproject.errors import BaseError
 from . import auth, posts, users
 
 bp = Blueprint("api", __name__, url_prefix="/api")
