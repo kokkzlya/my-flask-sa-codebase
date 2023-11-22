@@ -2,6 +2,7 @@ from dependency_injector import containers, providers
 from redis import ConnectionPool as RedisConnectionPool, Redis
 
 from myproject.repository.db import Session
+from myproject.usecases.healthchecks import HealthCheck
 from myproject.usecases.post import (
     CreatePost, DeletePost, GetPost, UpdatePost,
 )
@@ -30,6 +31,12 @@ class UseCases(containers.DeclarativeContainer):
     update_post = providers.Factory(UpdatePost, session=core.session)
     delete_post = providers.Factory(DeletePost, session=core.session)
     get_post = providers.Factory(GetPost, session=core.session)
+
+    healthcheck = providers.Factory(
+        HealthCheck,
+        redis_client=core.redis_client,
+        session=core.session,
+    )
 
 
 class App(containers.DeclarativeContainer):
