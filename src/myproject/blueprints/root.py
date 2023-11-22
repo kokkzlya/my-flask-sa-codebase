@@ -1,12 +1,9 @@
-from dataclasses import dataclass, field
-from typing import Callable, Optional, Tuple
-
-from dataclasses_json import dataclass_json
+from dependency_injector.wiring import Provide, inject
 from flask import Blueprint, Flask, Response
 
-from myproject.healthchecks import (
-    postgres_healthcheck, redis_healthcheck,
-)
+from myproject.containers import App
+from myproject.domain.interfaces.usecases import HealthCheck
+
 
 bp = Blueprint("root", __name__)
 
@@ -16,53 +13,14 @@ def landing():
     return "<h1>Hello, World!</h1>"
 
 
-@dataclass_json
-@dataclass
-class HealthcheckError:
-    error: str
-
-
-@dataclass_json
-@dataclass
-class HealthcheckStatus:
-    status: str = field(default=None)
-    errors: Optional[list[HealthcheckError]] = field(default=None)
-    services: list["ServiceStatus"] = field(default_factory=list)
-
-
-@dataclass_json
-@dataclass
-class ServiceStatus:
-    name: str = field(default=None)
-    status: str = field(default=None)
-    error: Optional[str] = field(default=None)
-
-
 @bp.route("/healthcheck", methods=["GET"])
-def health_check():
-    healthcheckers: Tuple[str, Callable] = [
-        ("redis", redis_healthcheck, ),
-        ("postgresql", postgres_healthcheck, ),
-    ]
-    status = HealthcheckStatus()
-    errs = []
-    for healthchecker in healthcheckers:
-        service_name, func = healthchecker
-        ok, err = func()
-        status.services.append(ServiceStatus(
-            name=service_name,
-            status="healthy" if ok else "unhealthy",
-            error=err,
-        ))
-        if not ok:
-            errs.append(HealthcheckError(error=err))
-
-    status.status = "healthy" if len(errs) == 0 else "unhealthy"
-    status.errors = errs if len(errs) > 0 else None
+@inject
+def health_check(hc: HealthCheck = Provide[App.usecases.healthcheck]):
+    status = hc.execute()
     return Response(
         status=200 if status.status == "healthy" else 500,
         content_type="application/json",
-        response=HealthcheckStatus.Schema().dumps(status),
+        response=status.to_json(),
     )
 
 

@@ -58,3 +58,25 @@ class Post:
     created: Optional[datetime] = field(default=None)
     updated: Optional[datetime] = field(default=None)
     deleted: Optional[datetime] = field(default=None)
+
+
+@dataclass_json
+@dataclass
+class HealthcheckError:
+    error: str
+
+
+@dataclass_json
+@dataclass
+class HealthcheckStatus:
+    status: str = field(default=None)
+    errors: Optional[list[HealthcheckError]] = field(default=None)
+    services: list["ServiceStatus"] = field(default_factory=list)
+
+
+@dataclass_json
+@dataclass
+class ServiceStatus:
+    name: str = field(default=None)
+    status: str = field(default=None)
+    error: Optional[str] = field(default=None)

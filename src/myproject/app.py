@@ -35,9 +35,9 @@ def create_app(config):
     container.config.from_dict(app.config)
     container.init_resources()
     container.wire(modules=[
-        "myproject.healthchecks",
         "myproject.blueprints.api.auth",
         "myproject.blueprints.api.posts",
+        "myproject.blueprints.root",
     ])
     app.container = container
     return app

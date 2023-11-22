@@ -38,3 +38,9 @@ class Login(ABC):
     @abstractmethod
     def execute(self, user_cred: UserCredential) -> User:
         raise NotImplementedError("TODO")
+
+
+class HealthCheck(ABC):
+    @abstractmethod
+    def execute(self):
+        raise NotImplementedError("TODO")
