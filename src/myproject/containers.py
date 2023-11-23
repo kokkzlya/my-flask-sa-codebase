@@ -6,7 +6,7 @@ from myproject.usecases.healthchecks import HealthCheck
 from myproject.usecases.post import (
     CreatePost, DeletePost, GetPost, UpdatePost,
 )
-from myproject.usecases.user import Login
+from myproject.usecases.user import CreateUser, GetUser, Login
 
 
 class Core(containers.DeclarativeContainer):
@@ -25,6 +25,8 @@ class UseCases(containers.DeclarativeContainer):
     config = providers.Configuration()
     core = providers.DependenciesContainer()
 
+    create_user = providers.Factory(CreateUser, session=core.session)
+    get_user = providers.Factory(GetUser, session=core.session)
     login = providers.Factory(Login, session=core.session)
 
     create_post = providers.Factory(CreatePost, session=core.session)
