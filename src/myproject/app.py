@@ -37,6 +37,7 @@ def create_app(config):
     container.wire(modules=[
         "myproject.blueprints.api.auth",
         "myproject.blueprints.api.posts",
+        "myproject.blueprints.api.users",
         "myproject.blueprints.root",
     ])
     app.container = container

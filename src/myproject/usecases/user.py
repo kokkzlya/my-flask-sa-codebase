@@ -4,10 +4,54 @@ from passlib.hash import argon2
 from sqlalchemy import or_, select
 from sqlalchemy.orm import load_only, scoped_session
 
-from myproject.domain.datatypes import User, UserCredential
-from myproject.domain.interfaces.usecases import Login
+from myproject.domain.datatypes import NewUser, User, UserCredential
+from myproject.domain.interfaces.usecases import CreateUser, GetUser, Login
 from myproject.errors import AuthorizationError
 from myproject.repository.model import User as UserModel
+
+
+class CreateUser(CreateUser):
+    def __init__(self, session: scoped_session):
+        self.session = session
+
+    def execute(self, user: NewUser):
+        user.created = user.updated = datetime.utcnow()
+        new_user = UserModel(
+            name=user.name,
+            email=user.email,
+            username=user.username,
+            password=argon2.hash(user.password),
+            created=user.created,
+            updated=user.updated,
+        )
+        self.session.add(new_user)
+        self.session.flush()
+        user.id = new_user.id
+
+
+class GetUser(GetUser):
+    def __init__(self, session: scoped_session):
+        self.session = session
+
+    def execute(self, user_id: str) -> User:
+        stmt = select(UserModel) \
+            .options(load_only(
+                UserModel.id, UserModel.name, UserModel.email,
+                UserModel.username, UserModel.password,
+                UserModel.created, UserModel.updated,
+            )) \
+            .where(or_(
+                UserModel.id == user_id,
+                UserModel.username == user_id,
+                UserModel.email == user_id,
+            ))
+        result = self.session.scalars(stmt).first()
+        if result is None:
+            return None
+        return User.from_dict({
+            col.name: getattr(result, col.name)
+            for col in UserModel.__table__.columns
+        })
 
 
 class Login(Login):

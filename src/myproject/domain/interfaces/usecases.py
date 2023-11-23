@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
-from myproject.domain.datatypes import Post, User, UserCredential
+from myproject.domain.datatypes import NewUser, Post, User, UserCredential
 
 
 class CreatePost(ABC):
@@ -37,6 +37,18 @@ class DeletePost(ABC):
 class Login(ABC):
     @abstractmethod
     def execute(self, user_cred: UserCredential) -> User:
+        raise NotImplementedError("TODO")
+
+
+class CreateUser(ABC):
+    @abstractmethod
+    def execute(self, user: NewUser):
+        raise NotImplementedError("TODO")
+
+
+class GetUser(ABC):
+    @abstractmethod
+    def execute(self, user_id: str) -> User:
         raise NotImplementedError("TODO")
 
 

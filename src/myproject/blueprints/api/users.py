@@ -3,12 +3,14 @@ from datetime import datetime
 from typing import Optional
 
 from dataclasses_json import dataclass_json
+from dependency_injector.wiring import Provide, inject
 from flask import Blueprint, Response, jsonify, request
-from passlib.hash import argon2
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.orm import load_only
 
-from myproject.domain.datatypes import User
+from myproject.containers import App
+from myproject.domain.datatypes import NewUser, User
+from myproject.domain.interfaces.usecases import CreateUser, GetUser
 from myproject.errors import NotFoundError
 from myproject.repository.db import Session
 from myproject.repository.model import User as UserModel
@@ -55,45 +57,27 @@ def fetch_users():
 
 
 @bp.route("", methods=["POST"])
-def create_user():
-    u = User.from_json(request.get_data(as_text=True))
-    new_user = User(
-        name=u.name,
-        email=u.email,
-        username=u.username,
-        password=argon2.hash(u.password),
-        created=datetime.utcnow(),
-        updated=datetime.utcnow(),
-    )
-    Session.add(new_user)
-    Session.flush()
+@inject
+def create_user(create_user: CreateUser = Provide[App.usecases.create_user]):
+    u = NewUser.from_json(request.get_data(as_text=True))
+    create_user.execute(u)
     return Response(
-        response=User.from_dict(new_user).to_json(),
+        response=User.from_dict(u.to_dict()).to_json(),
         status=201,
         headers={'Content-Type': "application/json"},
     )
 
 
 @bp.route("/<user_id>", methods=["GET"])
-def fetch_user(user_id):
-    stmt = select(User) \
-        .options(
-            load_only(
-                User.id, User.name, User.email, User.username,
-                User.banned_until, User.created, User.updated,
-            ),
-        ) \
-        .where(or_(
-            User.id == user_id,
-            User.deleted.is_(None),
-        ))
-    result = Session.scalars(stmt).first()
-    if result is None:
+@inject
+def fetch_user(
+        user_id: str,
+        get_user: GetUser = Provide[App.usecases.get_user],
+        ):
+    user = get_user.execute(user_id)
+    if user is None:
         raise NotFoundError(f"user with ID: `{user_id}` is not found")
     return Response(
-        response=User.from_dict({
-            col.name: getattr(result, col.name)
-            for col in UserModel.__table__.columns
-        }),
+        response=user.to_json(),
         headers={'Content-Type': "application/json"},
     )

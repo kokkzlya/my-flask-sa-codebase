@@ -17,6 +17,7 @@ class User:
     name: str = field(default=None)
     email: str = field(default=None)
     username: str = field(default=None)
+    banned_until: Optional[datetime] = field(default=None)
     created: Optional[datetime] = field(default=None)
     updated: Optional[datetime] = field(default=None)
     deleted: Optional[datetime] = field(default=None)
