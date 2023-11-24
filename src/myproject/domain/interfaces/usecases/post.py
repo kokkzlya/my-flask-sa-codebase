@@ -4,55 +4,55 @@ from typing import Sequence
 from myproject.domain.datatypes import NewUser, Post, User, UserCredential
 
 
-class CreatePost(ABC):
+class ICreatePost(ABC):
     @abstractmethod
     def execute(self, post: Post):
         raise NotImplementedError("TODO")
 
 
-class GetPost(ABC):
+class IGetPost(ABC):
     @abstractmethod
     def execute(self, post_id: str):
         raise NotImplementedError("TODO")
 
 
-class GetPosts(ABC):
+class IGetPosts(ABC):
     @abstractmethod
     def execute(self) -> Sequence[Post]:
         raise NotImplementedError("TODO")
 
 
-class UpdatePost(ABC):
+class IUpdatePost(ABC):
     @abstractmethod
     def execute(self, post: Post):
         raise NotImplementedError("TODO")
 
 
-class DeletePost(ABC):
+class IDeletePost(ABC):
     @abstractmethod
     def execute(self, post_id: str):
         raise NotImplementedError("TODO")
 
 
-class Login(ABC):
+class ILogin(ABC):
     @abstractmethod
     def execute(self, user_cred: UserCredential) -> User:
         raise NotImplementedError("TODO")
 
 
-class CreateUser(ABC):
+class ICreateUser(ABC):
     @abstractmethod
     def execute(self, user: NewUser):
         raise NotImplementedError("TODO")
 
 
-class GetUser(ABC):
+class IGetUser(ABC):
     @abstractmethod
     def execute(self, user_id: str) -> User:
         raise NotImplementedError("TODO")
 
 
-class HealthCheck(ABC):
+class IHealthCheck(ABC):
     @abstractmethod
     def execute(self):
         raise NotImplementedError("TODO")

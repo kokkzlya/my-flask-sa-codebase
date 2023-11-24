@@ -6,12 +6,12 @@ from sqlalchemy.orm import scoped_session
 
 from myproject.domain.datatypes import Post
 from myproject.domain.interfaces.usecases import (
-    CreatePost, DeletePost, GetPost, GetPosts, UpdatePost,
+    ICreatePost, IDeletePost, IGetPost, IGetPosts, IUpdatePost,
 )
 from myproject.repository.model import Post as PostModel
 
 
-class CreatePost(CreatePost):
+class CreatePost(ICreatePost):
     def __init__(self, session: scoped_session):
         self.session = session
 
@@ -29,7 +29,7 @@ class CreatePost(CreatePost):
         post.id = new_post.id
 
 
-class DeletePost(DeletePost):
+class DeletePost(IDeletePost):
     def __init__(self, session: scoped_session):
         self.session = session
 
@@ -42,7 +42,7 @@ class DeletePost(DeletePost):
         self.session.execute(stmt)
 
 
-class GetPost(GetPost):
+class GetPost(IGetPost):
     def __init__(self, session: scoped_session):
         self.session = session
 
@@ -57,12 +57,12 @@ class GetPost(GetPost):
         })
 
 
-class GetPosts(GetPosts):
+class GetPosts(IGetPosts):
     def execute(self) -> Sequence[Post]:
         pass
 
 
-class UpdatePost(UpdatePost):
+class UpdatePost(IUpdatePost):
     def __init__(self, session: scoped_session):
         self.session = session
 

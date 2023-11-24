@@ -7,7 +7,7 @@ from flask_login import current_user, login_required, login_user
 
 from myproject.containers import App
 from myproject.domain.datatypes import AuthedUser, UserCredential
-from myproject.domain.interfaces.usecases import Login
+from myproject.domain.interfaces.usecases import ILogin
 
 bp = Blueprint("auth", __name__)
 
@@ -22,7 +22,7 @@ class ResponseUser():
 
 @bp.route("/login", methods=["POST"])
 @inject
-def login(login: Login = Provide[App.usecases.login]):
+def login(login: ILogin = Provide[App.usecases.login]):
     user_cred = UserCredential.from_json(request.get_data(as_text=True))
     user = login.execute(user_cred)
     login_user(AuthedUser(user))

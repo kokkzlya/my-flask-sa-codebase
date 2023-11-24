@@ -5,12 +5,14 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import load_only, scoped_session
 
 from myproject.domain.datatypes import NewUser, User, UserCredential
-from myproject.domain.interfaces.usecases import CreateUser, GetUser, Login
+from myproject.domain.interfaces.usecases import (
+    ICreateUser, IGetUser, ILogin,
+)
 from myproject.errors import AuthorizationError
 from myproject.repository.model import User as UserModel
 
 
-class CreateUser(CreateUser):
+class CreateUser(ICreateUser):
     def __init__(self, session: scoped_session):
         self.session = session
 
@@ -29,7 +31,7 @@ class CreateUser(CreateUser):
         user.id = new_user.id
 
 
-class GetUser(GetUser):
+class GetUser(IGetUser):
     def __init__(self, session: scoped_session):
         self.session = session
 
@@ -54,7 +56,7 @@ class GetUser(GetUser):
         })
 
 
-class Login(Login):
+class Login(ILogin):
     def __init__(self, session: scoped_session):
         self.session = session
 
