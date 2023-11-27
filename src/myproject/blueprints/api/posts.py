@@ -5,7 +5,7 @@ from flask_login import current_user, login_required
 from myproject.containers import App
 from myproject.domain.datatypes import Post
 from myproject.domain.interfaces.usecases import (
-    CreatePost, DeletePost, GetPost, UpdatePost,
+    ICreatePost, IDeletePost, IGetPost, IUpdatePost,
 )
 from myproject.errors import NotFoundError
 
@@ -28,7 +28,7 @@ bp = Blueprint("posts", __name__)
 @bp.route("", methods=["POST"])
 @login_required
 @inject
-def create_post(create_post: CreatePost = Provide[App.usecases.create_post]):
+def create_post(create_post: ICreatePost = Provide[App.usecases.create_post]):
     p: Post = Post.from_json(request.get_data(as_text=True))
     p.author = current_user.user
     create_post.execute(p)
@@ -43,7 +43,7 @@ def create_post(create_post: CreatePost = Provide[App.usecases.create_post]):
 @inject
 def fetch_post(
         post_id,
-        get_post: GetPost = Provide[App.usecases.get_post],
+        get_post: IGetPost = Provide[App.usecases.get_post],
         ):
     result = get_post.execute(post_id)
     if result is None:
@@ -58,8 +58,8 @@ def fetch_post(
 @inject
 def update_post(
         post_id: str,
-        get_post: GetPost = Provide[App.usecases.get_post],
-        update_post: UpdatePost = Provide[App.usecases.update_post],
+        get_post: IGetPost = Provide[App.usecases.get_post],
+        update_post: IUpdatePost = Provide[App.usecases.update_post],
         ):
     result = get_post.execute(post_id)
     if result is None:
@@ -73,8 +73,8 @@ def update_post(
 @inject
 def delete_post(
         post_id: str,
-        get_post: GetPost = Provide[App.usecases.get_post],
-        delete_post: DeletePost = Provide[App.usecases.delete_post],
+        get_post: IGetPost = Provide[App.usecases.get_post],
+        delete_post: IDeletePost = Provide[App.usecases.delete_post],
         ):
     result = get_post.execute(post_id)
     if result is None:

@@ -2,7 +2,7 @@ from dependency_injector.wiring import Provide, inject
 from flask import Blueprint, Flask, Response
 
 from myproject.containers import App
-from myproject.domain.interfaces.usecases import HealthCheck
+from myproject.domain.interfaces.usecases import IHealthCheck
 
 
 bp = Blueprint("root", __name__)
@@ -15,7 +15,7 @@ def landing():
 
 @bp.route("/healthcheck", methods=["GET"])
 @inject
-def health_check(hc: HealthCheck = Provide[App.usecases.healthcheck]):
+def health_check(hc: IHealthCheck = Provide[App.usecases.healthcheck]):
     status = hc.execute()
     return Response(
         status=200 if status.status == "healthy" else 500,

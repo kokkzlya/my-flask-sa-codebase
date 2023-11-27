@@ -8,7 +8,7 @@ from sqlalchemy.sql import text
 from myproject.domain.datatypes import (
     HealthcheckError, HealthcheckStatus, ServiceStatus,
 )
-from myproject.domain.interfaces.usecases import HealthCheck
+from myproject.domain.interfaces.usecases import IHealthCheck
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ def postgres_healthcheck(session: scoped_session) -> Tuple[bool, str]:
         return False, "Lost database connection"
 
 
-class HealthCheck(HealthCheck):
+class HealthCheck(IHealthCheck):
     def __init__(self, redis_client: Redis, session: scoped_session):
         self.redis_client = redis_client
         self.session = session

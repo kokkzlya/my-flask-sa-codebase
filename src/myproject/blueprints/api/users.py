@@ -10,7 +10,7 @@ from sqlalchemy.orm import load_only
 
 from myproject.containers import App
 from myproject.domain.datatypes import NewUser, User
-from myproject.domain.interfaces.usecases import CreateUser, GetUser
+from myproject.domain.interfaces.usecases import ICreateUser, IGetUser
 from myproject.errors import NotFoundError
 from myproject.repository.db import Session
 from myproject.repository.model import User as UserModel
@@ -58,7 +58,7 @@ def fetch_users():
 
 @bp.route("", methods=["POST"])
 @inject
-def create_user(create_user: CreateUser = Provide[App.usecases.create_user]):
+def create_user(create_user: ICreateUser = Provide[App.usecases.create_user]):
     u = NewUser.from_json(request.get_data(as_text=True))
     create_user.execute(u)
     return Response(
@@ -72,7 +72,7 @@ def create_user(create_user: CreateUser = Provide[App.usecases.create_user]):
 @inject
 def fetch_user(
         user_id: str,
-        get_user: GetUser = Provide[App.usecases.get_user],
+        get_user: IGetUser = Provide[App.usecases.get_user],
         ):
     user = get_user.execute(user_id)
     if user is None:
